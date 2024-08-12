@@ -5,9 +5,11 @@ import { timer, interval, takeUntil, map, first } from "rxjs";
 const match = (path: string) => {
   return (
     // 任务视图
-    /\/projex\/project\/.+\/task/.test(path) ||
+    /^\/projex\/project\/.+\/task/.test(path) ||
     // 工作项视图
-    /\/projex\/workitem/.test(path)
+    /^\/projex\/workitem/.test(path) ||
+    // 工作台视图
+    /^\/workbench$/.test(path)
   );
 };
 
@@ -19,22 +21,40 @@ const apiMaps = new Map<string, ApiHandler>([
         .pipe(
           // 查询到元素存在后，停止轮询，并返回元素
           map(() => {
-            return document.querySelector(
+            let dom = document.querySelector(
+              "#AONE_MY_WORKITEM_CARD .next-table-inner"
+            ) as HTMLElement;
+            let col: number | undefined = 1;
+            if (dom) {
+              return {
+                dom,
+                col,
+              };
+            }
+            dom = document.querySelector(
               ".workitemListMainAreaWrap .next-table-inner"
             ) as HTMLElement;
+            if (dom) {
+              col = findColsNum(dom, "状态");
+              return {
+                dom,
+                col,
+              };
+            }
+            return undefined;
           }),
-          first((el) => !!el),
+          first((data) => !!data),
           takeUntil(timer(500))
         )
         .subscribe({
-          next: (target) => {
+          next: ({ dom: target, col }) => {
+            console.log(target);
             // 可能通过侧边栏触发接口，但是无法判断触发来源
             if (target.getAttribute("init-progress")) {
               console.log("已经初始化过了");
               return;
             }
             target.setAttribute("init-progress", "true");
-            const col = findColsNum(target, "状态");
             if (col) {
               const elList = target.querySelectorAll<HTMLTableCellElement>(
                 `.next-table-body tr td[data-next-table-col="${col}"] button`
@@ -60,7 +80,7 @@ const apiMaps = new Map<string, ApiHandler>([
 /**
  * 找到标题是第几列
  */
-function findColsNum(target: HTMLElement, title: string): number | void {
+function findColsNum(target: HTMLElement, title: string): number | undefined {
   const thList = target.querySelectorAll<HTMLTableCaptionElement>(
     ".next-table-header th"
   );
@@ -69,6 +89,7 @@ function findColsNum(target: HTMLElement, title: string): number | void {
       return i;
     }
   }
+  return undefined;
 }
 
 async function queryParentAndUpdateEl(

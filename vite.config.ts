@@ -11,7 +11,7 @@ export default defineConfig({
         namespace: "npm/vite-plugin-monkey",
         match: [
           "https://devops.aliyun.com/projex/*",
-          "https://devops.aliyun.com/workbench/*",
+          "https://devops.aliyun.com/workbench*",
         ],
         description: "云效脚本",
         license: "MIT",
