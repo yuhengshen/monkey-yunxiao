@@ -18,7 +18,7 @@ export default defineConfig({
       },
       build: {
         externalGlobals: {
-          rxjs: cdn.bytecdntp("rxjs", "https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/rxjs/7.5.4/rxjs.umd.min.js"),
+          rxjs: cdn.bytecdntp("rxjs", "rxjs.umd.min.js"),
         }
       }
     }),
