@@ -15,7 +15,8 @@
     "vite-plugin-monkey": "^4.0.0"
   },
   "dependencies": {
-    "dexie": "^4.0.8",
+    "dayjs": "1.10.8",
+    "dexie": "4.0.8",
     "rxjs": "7.5.4"
   }
 }

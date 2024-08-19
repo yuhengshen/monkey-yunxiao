@@ -1,4 +1,4 @@
-import { ApiHandler, ChainHandler } from "../utils";
+import { ApiHandler, ChainHandler, getUserInfo } from "../utils";
 import style from "../style.module.css";
 import { timer, interval, takeUntil, map, first, mergeMap, from } from "rxjs";
 import yunxiao from "../assets/yunxiao.svg";
@@ -76,37 +76,6 @@ const apiMaps = new Map<string, ApiHandler>([
     },
   ],
 ]);
-
-/**
- * 请求用户信息的接口触发太早，拦截不到 ~~
- * @returns
- */
-const getUserInfo = (() => {
-  let promise: Promise<{
-    name: string;
-    identifier: string;
-  }>;
-  return async () => {
-    if (promise) {
-      return promise;
-    }
-    promise = fetch(`https://devops.aliyun.com/uiless/api/sdk/users/me`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "GET",
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        return {
-          name: res.result.user.name,
-          identifier: res.result.user.id,
-        };
-      });
-    return promise;
-  };
-})();
 
 /**
  * 找到标题是第几列

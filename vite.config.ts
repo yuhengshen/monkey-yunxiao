@@ -21,8 +21,9 @@ export default defineConfig({
         externalGlobals: {
           rxjs: cdn.bytecdntp("rxjs", "rxjs.umd.min.js"),
           dexie: cdn.bytecdntp("dexie", "dexie.min.js"),
-        }
-      }
+          dayjs: cdn.bytecdntp("dayjs", "dayjs.min.js"),
+        },
+      },
     }),
   ],
 });

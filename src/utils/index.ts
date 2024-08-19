@@ -18,6 +18,10 @@ export interface ChainHandler {
    * 名称
    */
   name?: string;
+  /**
+   * 初始化函数
+   */
+  init?: () => void;
 }
 
 export class ChainOfResponsibility {
@@ -28,6 +32,7 @@ export class ChainOfResponsibility {
 
   add(handler: ChainHandler) {
     this.handlers.push(handler);
+    handler.init?.();
     return this;
   }
 
@@ -47,3 +52,34 @@ export class ChainOfResponsibility {
     }
   }
 }
+
+/**
+ * 请求用户信息的接口触发太早，拦截不到 ~~
+ * @returns
+ */
+export const getUserInfo = (() => {
+  let promise: Promise<{
+    name: string;
+    identifier: string;
+  }>;
+  return async () => {
+    if (promise) {
+      return promise;
+    }
+    promise = fetch(`https://devops.aliyun.com/uiless/api/sdk/users/me`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        return {
+          name: res.result.user.name,
+          identifier: res.result.user.id,
+        };
+      });
+    return promise;
+  };
+})();
