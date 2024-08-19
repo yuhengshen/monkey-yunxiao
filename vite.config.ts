@@ -15,10 +15,12 @@ export default defineConfig({
         ],
         description: "云效脚本",
         license: "MIT",
+        "run-at": "document-start",
       },
       build: {
         externalGlobals: {
           rxjs: cdn.bytecdntp("rxjs", "rxjs.umd.min.js"),
+          dexie: cdn.bytecdntp("dexie", "dexie.min.js"),
         }
       }
     }),

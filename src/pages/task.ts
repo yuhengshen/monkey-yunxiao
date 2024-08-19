@@ -1,6 +1,7 @@
 import { ApiHandler, ChainHandler } from "../utils";
 import style from "../style.module.css";
-import { timer, interval, takeUntil, map, first } from "rxjs";
+import { timer, interval, takeUntil, map, first, mergeMap, from } from "rxjs";
+import yunxiao from "../assets/yunxiao.svg";
 
 const match = (path: string) => {
   return (
@@ -48,7 +49,6 @@ const apiMaps = new Map<string, ApiHandler>([
         )
         .subscribe({
           next: ({ dom: target, col }) => {
-            console.log(target);
             // 可能通过侧边栏触发接口，但是无法判断触发来源
             if (target.getAttribute("init-progress")) {
               console.log("已经初始化过了");
@@ -78,6 +78,37 @@ const apiMaps = new Map<string, ApiHandler>([
 ]);
 
 /**
+ * 请求用户信息的接口触发太早，拦截不到 ~~
+ * @returns
+ */
+const getUserInfo = (() => {
+  let promise: Promise<{
+    name: string;
+    identifier: string;
+  }>;
+  return async () => {
+    if (promise) {
+      return promise;
+    }
+    promise = fetch(`https://devops.aliyun.com/uiless/api/sdk/users/me`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        return {
+          name: res.result.user.name,
+          identifier: res.result.user.id,
+        };
+      });
+    return promise;
+  };
+})();
+
+/**
  * 找到标题是第几列
  */
 function findColsNum(target: HTMLElement, title: string): number | undefined {
@@ -92,13 +123,20 @@ function findColsNum(target: HTMLElement, title: string): number | undefined {
   return undefined;
 }
 
-async function queryParentAndUpdateEl(
-  identifier: string,
-  dom: HTMLDivElement,
-  dataItem: any
+interface NotCompletedTask {
+  subject: string;
+  identifier: string;
+  spaceIdentifier: string;
+  parentIdentifier: string;
+}
+let notCompletedTaskMap = new Map<string, NotCompletedTask>();
+
+async function queryOtherTaskProgress(
+  parentIdentifier: string,
+  { identifier }: any
 ) {
   const res = await fetch(
-    `https://devops.aliyun.com/projex/api/workitem/v2/workitem/${identifier}/relation/workitem/list/by-relation-category?category=PARENT_SUB&isForward=true&_input_charset=utf-8`,
+    `https://devops.aliyun.com/projex/api/workitem/v2/workitem/${parentIdentifier}/relation/workitem/list/by-relation-category?category=PARENT_SUB&isForward=true&_input_charset=utf-8`,
     {
       headers: {
         "Content-Type": "application/json",
@@ -111,14 +149,10 @@ async function queryParentAndUpdateEl(
   // 获取全部任务列表，且不数据当前子任务
   const taskList = res.result
     ?.filter((item: any) => item.workitemTypeName === "任务")
-    .filter((item: any) => item.identifier !== dataItem.identifier);
+    .filter((item: any) => item.identifier !== identifier);
 
-  function setStyle(n: number) {
-    dom.style.width = `${n}%`;
-  }
   if (!taskList?.length) {
-    setStyle(100);
-    return;
+    return 100;
   }
 
   const progress = taskList.length * 100;
@@ -136,9 +170,73 @@ async function queryParentAndUpdateEl(
     }
   });
 
-  const percent = (completed / progress) * 100;
-  setStyle(percent);
+  return (completed / progress) * 100;
 }
+
+async function queryParentAndUpdateEl(
+  parentIdentifier: string,
+  dom: HTMLDivElement,
+  dataItem: any
+) {
+  const progress = await queryOtherTaskProgress(parentIdentifier, {
+    identifier: dataItem.identifier,
+  });
+  dom.style.width = `${progress}%`;
+  const userInfo = await getUserInfo();
+  const userId = userInfo.identifier;
+  if (userId === dataItem.assignedTo.identifier) {
+    if (progress === 100) {
+      notCompletedTaskMap.delete(dataItem.identifier);
+    } else {
+      if (!notCompletedTaskMap.has(dataItem.identifier)) {
+        notCompletedTaskMap.set(dataItem.identifier, {
+          subject: dataItem.subject,
+          identifier: dataItem.identifier,
+          spaceIdentifier: dataItem.spaceIdentifier,
+          parentIdentifier,
+        });
+      }
+    }
+  }
+}
+
+async function notificationTask([
+  identifier,
+  { subject, parentIdentifier, spaceIdentifier },
+]: [string, NotCompletedTask]) {
+  try {
+    const progress = await queryOtherTaskProgress(parentIdentifier, {
+      identifier,
+    });
+    if (progress === 100) {
+      notCompletedTaskMap.delete(identifier);
+      new Notification("其他任务进度已完成", {
+        body: `任务：${subject} 的其他任务已完成，点击查看需求详情`,
+        icon: yunxiao,
+        requireInteraction: true,
+      }).addEventListener("click", () => {
+        window.open(
+          `https://devops.aliyun.com/projex/project/${spaceIdentifier}/req/${parentIdentifier}`
+        );
+      });
+    }
+  } catch (e: any) {
+    console.error("查询任务进度失败");
+  }
+}
+
+/**
+ * 对于未完成的任务，每隔一段时间查询一次进度，如果进度为100%，则发送通知
+ */
+interval(1000 * 60 * 10)
+  .pipe(
+    mergeMap(() =>
+      from([...notCompletedTaskMap.entries()]).pipe(
+        mergeMap(notificationTask, 5)
+      )
+    )
+  )
+  .subscribe();
 
 const name = "任务进度条";
 

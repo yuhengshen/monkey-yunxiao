@@ -4,7 +4,6 @@ import { ChainOfResponsibility } from "./utils";
 const chain = new ChainOfResponsibility();
 
 chain.add(taskHandler);
-
 const xhrOpen = window.XMLHttpRequest.prototype.open;
 window.XMLHttpRequest.prototype.open = function (...args: any) {
   xhrOpen.apply(this, args);
