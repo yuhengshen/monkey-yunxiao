@@ -1,12 +1,14 @@
+import { fromEvent, Observable, filter } from "rxjs";
+
 export interface ApiHandler<T = any> {
   (data: T): void;
 }
 
 export interface ChainHandler {
   /**
-   * 
+   *
    * @param url - location.pathname 是否匹配
-   * @returns 
+   * @returns
    */
   match: (path: string) => boolean;
   /**
@@ -45,7 +47,9 @@ export class ChainOfResponsibility {
       if (handler.match(params.triggerURLPath)) {
         const task = handler.apiMaps.get(params.path);
         if (task) {
-          console.log(`通过接口请求，触发了脚本: ${params.path} ===> ${handler.name}`);
+          console.log(
+            `通过接口请求，触发了脚本: ${params.path} ===> ${handler.name}`
+          );
           task(params.responseJSON);
         }
       }
@@ -81,5 +85,53 @@ export const getUserInfo = (() => {
         };
       });
     return promise;
+  };
+})();
+
+// export 导出的原始类型，也会保持引用关系
+export let isCheat = false;
+export const initKeyBind = () => {
+  const konami$: string[] = [];
+  const sub = (fromEvent(document, "keydown") as Observable<KeyboardEvent>)
+    .pipe(
+      filter((e) => {
+        konami$.push(e.key.toLocaleLowerCase());
+        if (konami$.length > 10) {
+          konami$.shift();
+        }
+        return (
+          konami$.join("") ===
+          "arrowuparrowuparrowdownarrowdownarrowleftarrowrightarrowleftarrowrightba"
+        );
+      })
+    )
+    .subscribe(() => {
+      isCheat = true;
+      sub.unsubscribe();
+    });
+};
+
+interface Member {
+  name: string;
+  pinyin: string;
+  _userId: string;
+}
+
+export const getAllMembers = (() => {
+  let allMembers: Promise<Member[]>;
+
+  return async () => {
+    if (allMembers) {
+      return allMembers;
+    }
+    allMembers = fetch(
+      "https://devops.aliyun.com/projex/api/workspace/space/recommend/member/list?pageSize=100&withDeletedAndDisabled=false",
+      {
+        credentials: "include",
+      }
+    )
+      .then((res) => res.json())
+      .then((res) => res.result);
+    return allMembers;
   };
 })();

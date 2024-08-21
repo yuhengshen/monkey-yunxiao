@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { ChainHandler, getUserInfo } from "../utils";
+import { ChainHandler, getAllMembers, getUserInfo, isCheat } from "../utils";
 import style from "../style.module.css";
 
 const workClassName = style["working-hours-tips"];
@@ -10,8 +10,12 @@ interface WorkingHour {
   actualWorkTime: number;
 }
 
-async function getWorkingHours() {
-  const { identifier } = await getUserInfo();
+async function getWorkingHours(userId?: string | null) {
+  if (userId) {
+  } else {
+    const { identifier } = await getUserInfo();
+    userId = identifier;
+  }
   const endTime = dayjs().format("YYYY-MM-DD");
   const startTime = dayjs().startOf("month").format("YYYY-MM-DD");
   return fetch(
@@ -22,7 +26,7 @@ async function getWorkingHours() {
       },
       body: JSON.stringify({
         projectIds: "",
-        userIds: identifier,
+        userIds: userId,
         startTime,
         endTime,
         tab: "time",
@@ -54,15 +58,21 @@ async function getWorkingHours() {
     });
 }
 
-async function updateWorkingHours() {
-  const list = await getWorkingHours();
+async function updateWorkingHours(userId?: string | null) {
+  const list = await getWorkingHours(userId);
   let div = document.querySelector(`.${workClassName}`) as HTMLDivElement;
   if (!div) {
     div = document.createElement("div");
     div.classList.add(workClassName);
     div.addEventListener("click", async () => {
-      await updateWorkingHours();
-      window.alert("更新成功");
+      if (isCheat) {
+        const userName = window.prompt("请输入用户");
+        const allMembers = await getAllMembers();
+        const userId = allMembers.find((e) => e.name === userName)?._userId;
+        await updateWorkingHours(userId);
+      } else {
+        await updateWorkingHours();
+      }
     });
     document.querySelector(".system-bar-middle")?.appendChild(div);
   }

@@ -1,6 +1,6 @@
 import taskHandler from "./pages/task";
 import workingHours from "./pages/workingHours";
-import { ChainOfResponsibility } from "./utils";
+import { ChainOfResponsibility, initKeyBind } from "./utils";
 
 const chain = new ChainOfResponsibility();
 
@@ -26,3 +26,5 @@ window.XMLHttpRequest.prototype.open = function (...args: any) {
     }
   });
 };
+
+initKeyBind();
