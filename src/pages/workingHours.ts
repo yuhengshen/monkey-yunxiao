@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { ChainHandler, getAllMembers, getUserInfo, isCheat } from "../utils";
 import style from "../style.module.css";
+import { timer } from "rxjs";
 
 const workClassName = style["working-hours-tips"];
 
@@ -85,7 +86,9 @@ async function updateWorkingHours(userId?: string | null) {
 }
 
 const init = () => {
-  updateWorkingHours();
+  timer(100).subscribe(() => {
+    updateWorkingHours();
+  });
 };
 
 const match: ChainHandler["match"] = (path: string) => {
