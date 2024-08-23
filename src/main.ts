@@ -4,8 +4,7 @@ import { ChainOfResponsibility, initKeyBind } from "./utils";
 
 const chain = new ChainOfResponsibility();
 
-chain.add(taskHandler);
-chain.add(workingHours);
+chain.add(taskHandler).add(workingHours);
 
 const xhrOpen = window.XMLHttpRequest.prototype.open;
 window.XMLHttpRequest.prototype.open = function (...args: any) {

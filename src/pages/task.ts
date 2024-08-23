@@ -115,6 +115,10 @@ async function queryOtherTaskProgress(
     }
   ).then((res) => res.json());
 
+  if (res.code !== 200) {
+    return 0;
+  }
+
   // 获取全部任务列表，且不数据当前子任务
   const taskList = res.result
     ?.filter((item: any) => item.workitemTypeName === "任务")

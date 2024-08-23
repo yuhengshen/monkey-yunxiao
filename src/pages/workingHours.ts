@@ -104,8 +104,10 @@ const apiMaps: ChainHandler["apiMaps"] = new Map([
   [
     "/projex/api/workitem/workitem/time",
     () => {
-      // 不是实时的，没有意义，找新接口
-      // updateWorkingHours();
+      // 不是实时的，等待5分钟
+      timer(5 * 60 * 1000).subscribe(() => {
+        updateWorkingHours();
+      });
     },
   ],
 ]);
