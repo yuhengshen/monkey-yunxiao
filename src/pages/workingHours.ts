@@ -80,8 +80,8 @@ async function updateWorkingHours(userId?: string | null) {
   const todayWorkHours = list[list.length - 1]?.actualWorkTime || 0;
   const monthWorkHours = list.reduce((acc, cur) => acc + cur.actualWorkTime, 0);
   div.classList.add(workClassName);
-  div.textContent = `[有几分钟延迟]今天工时: ${todayWorkHours} 小时, 这个月已累计: ${monthWorkHours} 小时（${
-    monthWorkHours / 4
+  div.textContent = `[有几分钟延迟]今天工时: ${todayWorkHours} 小时, 这个月已累计: ${monthWorkHours.toFixed(2)} 小时（${
+    (monthWorkHours / 4).toFixed(2)
   }个任务）`;
 }
 
