@@ -120,9 +120,10 @@ async function queryOtherTaskProgress(
   }
 
   // 获取全部任务列表，且不数据当前子任务
-  const taskList = res.result
-    ?.filter((item: any) => item.workitemTypeName === "任务")
-    .filter((item: any) => item.identifier !== identifier);
+  const taskList = res.result?.filter(
+    (item: any) =>
+      item.workitemTypeName === "任务" && item.identifier !== identifier
+  );
 
   if (!taskList?.length) {
     return 100;
@@ -193,7 +194,7 @@ async function notificationTask([
         );
       });
     }
-  } catch (e: any) {
+  } catch {
     console.error("查询任务进度失败");
   }
 }
