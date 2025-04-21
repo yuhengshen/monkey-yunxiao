@@ -26,10 +26,12 @@ const apiMaps = new Map<string, ApiHandler>([
               "#AONE_MY_WORKITEM_CARD .next-table-inner"
             ) as HTMLElement;
             let col: number | undefined = 1;
+            let titleCol: number | undefined = 0;
             if (dom) {
               return {
                 dom,
                 col,
+                titleCol,
               };
             }
             dom = document.querySelector(
@@ -37,9 +39,11 @@ const apiMaps = new Map<string, ApiHandler>([
             ) as HTMLElement;
             if (dom) {
               col = findColsNum(dom, "状态");
+              titleCol = findColsNum(dom, "标题");
               return {
                 dom,
                 col,
+                titleCol,
               };
             }
             return undefined;
@@ -48,29 +52,57 @@ const apiMaps = new Map<string, ApiHandler>([
           takeUntil(timer(500))
         )
         .subscribe({
-          next: ({ dom: target, col }) => {
+          next: ({ dom: target, col, titleCol }) => {
             // 可能通过侧边栏触发接口，但是无法判断触发来源
             if (target.getAttribute("init-progress")) {
               console.log("已经初始化过了");
               return;
             }
             target.setAttribute("init-progress", "true");
-            if (col) {
-              const elList = target.querySelectorAll<HTMLTableCellElement>(
-                `.next-table-body tr td[data-next-table-col="${col}"] button`
+            const trList = target.querySelectorAll<HTMLTableRowElement>(
+              ".next-table-body tr"
+            );
+
+            trList.forEach((tr, i) => {
+              const dataItem = data.result[i];
+              if (dataItem.workitemType.name !== "任务") return;
+              const titleEl = tr.querySelector<HTMLDivElement>(
+                `td[data-next-table-col="${titleCol}"] .next-table-cell-wrapper`
               );
-              elList.forEach((el, i) => {
-                const dataItem = data.result[i];
-                if (dataItem.workitemType.name !== "任务") return;
-                el.style.position = "relative";
-                const div = document.createElement("div");
-                div.classList.add(style["status-button-progress"]);
-                el.appendChild(div);
-                const parentIdentifier = dataItem?.parentIdentifier;
-                parentIdentifier &&
-                  queryParentAndUpdateEl(parentIdentifier, div, dataItem);
-              });
-            }
+
+              // 设置需求
+              if (dataItem.parentWorkitem && titleEl) {
+                // 需求号
+                const serialNumber = dataItem.parentWorkitem.parentSerialNumber;
+                // 复制需求名称
+                const title = dataItem.parentWorkitem.parentSubject.replaceAll(" ", "");
+                const copyBtnWrapper = document.createElement("div");
+                copyBtnWrapper.classList.add(style["copy-btn-wrapper"]);
+
+                const txt = `${serialNumber}-${title}`;
+
+                const copyBtn = document.createElement("div");
+                copyBtn.innerText = "复制分支名称";
+                copyBtn.addEventListener("click", () => {
+                  navigator.clipboard.writeText(txt);
+                });
+                copyBtnWrapper.appendChild(copyBtn);
+
+                titleEl.appendChild(copyBtnWrapper);
+              }
+
+
+              // 设置进度
+              const btnEl = tr.querySelector<HTMLTableCellElement>(
+                `td[data-next-table-col="${col}"] button`
+              );
+              const div = document.createElement("div");
+              div.classList.add(style["status-button-progress"]);
+              btnEl?.appendChild(div);
+              const parentIdentifier = dataItem?.parentIdentifier;
+              parentIdentifier &&
+                queryParentAndUpdateEl(parentIdentifier, div, dataItem);
+            });
           },
         });
     },
