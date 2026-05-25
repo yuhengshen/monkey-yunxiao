@@ -17,13 +17,13 @@ export default defineConfig({
         license: "MIT",
         "run-at": "document-start",
       },
-      build: {
-        externalGlobals: {
-          rxjs: cdn.bytecdntp("rxjs", "rxjs.umd.min.js"),
-          dexie: cdn.bytecdntp("dexie", "dexie.min.js"),
-          dayjs: cdn.bytecdntp("dayjs", "dayjs.min.js"),
-        },
-      },
+      // build: {
+      //   externalGlobals: {
+      //     rxjs: cdn.jsdelivr("rxjs", "rxjs.umd.min.js"),
+      //     dexie: cdn.jsdelivr("dexie", "dexie.min.js"),
+      //     dayjs: cdn.jsdelivr("dayjs", "dayjs.min.js"),
+      //   },
+      // },
     }),
   ],
   build: {
